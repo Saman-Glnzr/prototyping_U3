@@ -1,0 +1,835 @@
+:root {
+  --bg: #f2f5f7;
+  --panel: #ffffff;
+
+  --text: #17202a;
+  --muted: #5f6b76;
+
+  --border: #dce3e8;
+
+  --accent: #174f7c;
+  --accent-green: #0e6a63;
+
+  --soft-blue: #eaf3fa;
+  --soft-green: #e8f4f2;
+
+  --shadow: 0 16px 42px rgba(24, 45, 66, 0.09);
+
+  --radius: 24px;
+}
+
+/* -------------------- */
+/* GLOBAL */
+/* -------------------- */
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+
+  font-family: Arial, Helvetica, sans-serif;
+
+  background: var(--bg);
+  color: var(--text);
+}
+
+body {
+  min-height: 100vh;
+}
+
+button {
+  font: inherit;
+  cursor: pointer;
+
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* -------------------- */
+/* APP */
+/* -------------------- */
+
+.app-shell {
+  min-height: 100vh;
+
+  display: grid;
+
+  grid-template-rows:
+    auto
+    1fr
+    auto;
+}
+
+/* -------------------- */
+/* HEADER */
+/* -------------------- */
+
+.topbar {
+  display: flex;
+
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 24px;
+
+  padding: 22px 34px;
+
+  background: white;
+
+  border-bottom: 1px solid var(--border);
+}
+
+.brand-wrap {
+  display: flex;
+
+  align-items: center;
+
+  gap: 14px;
+}
+
+.eyebrow {
+  margin: 0;
+
+  text-transform: uppercase;
+
+  letter-spacing: 2px;
+
+  font-size: 12px;
+  font-weight: bold;
+
+  color: var(--accent);
+}
+
+.station-label {
+  margin: 4px 0 0;
+
+  font-size: 18px;
+}
+
+.clock-wrap {
+  text-align: right;
+
+  min-width: 160px;
+}
+
+.clock {
+  display: block;
+
+  font-size: 30px;
+  font-weight: bold;
+}
+
+.date {
+  display: block;
+
+  margin-top: 5px;
+
+  color: var(--muted);
+
+  font-size: 14px;
+}
+
+/* -------------------- */
+/* MAIN */
+/* -------------------- */
+
+.main-content {
+  width: min(1180px, calc(100% - 48px));
+
+  margin: 0 auto;
+
+  padding: 50px 0 64px;
+}
+
+/* -------------------- */
+/* STARTSIDA */
+/* -------------------- */
+
+.hero {
+  max-width: 850px;
+
+  margin-bottom: 34px;
+}
+
+.hero h1 {
+  margin: 0;
+
+  font-size: 56px;
+
+  line-height: 1.05;
+}
+
+.hero p {
+  margin-top: 16px;
+
+  max-width: 760px;
+
+  font-size: 21px;
+
+  line-height: 1.5;
+
+  color: var(--muted);
+}
+
+.action-grid {
+  display: grid;
+
+  grid-template-columns: repeat(2, 1fr);
+
+  gap: 24px;
+}
+
+.action-card {
+  min-height: 250px;
+
+  padding: 34px;
+
+  text-align: left;
+
+  border: 2px solid var(--border);
+
+  border-radius: var(--radius);
+
+  background: var(--panel);
+
+  box-shadow: var(--shadow);
+}
+
+.action-card h2 {
+  margin: 0;
+
+  font-size: 34px;
+}
+
+.action-card p {
+  margin-top: 16px;
+
+  color: var(--muted);
+
+  font-size: 19px;
+
+  line-height: 1.5;
+}
+
+.link-label {
+  display: inline-block;
+
+  margin-top: 34px;
+
+  color: var(--accent);
+
+  font-size: 17px;
+
+  font-weight: bold;
+}
+
+/* -------------------- */
+/* SIDRUBRIK */
+/* -------------------- */
+
+.page-heading {
+  display: grid;
+
+  grid-template-columns:
+    auto
+    1fr;
+
+  gap: 20px;
+
+  align-items: start;
+
+  margin-bottom: 32px;
+}
+
+.page-heading h1 {
+  margin: 0;
+
+  font-size: 48px;
+}
+
+.page-heading p {
+  margin-top: 10px;
+
+  max-width: 780px;
+
+  color: var(--muted);
+
+  font-size: 18px;
+
+  line-height: 1.5;
+}
+
+.home-button {
+  min-width: 130px;
+  min-height: 58px;
+
+  padding: 0 20px;
+
+  border: none;
+
+  border-radius: 16px;
+
+  background: white;
+
+  box-shadow: var(--shadow);
+
+  color: var(--text);
+
+  font-weight: bold;
+}
+
+/* -------------------- */
+/* PERRONGER */
+/* -------------------- */
+
+.choice-grid {
+  display: grid;
+
+  grid-template-columns: repeat(2, 1fr);
+
+  gap: 18px;
+}
+
+.choice-card {
+  padding: 26px;
+
+  text-align: left;
+
+  background: white;
+
+  border: 2px solid var(--border);
+
+  border-radius: 20px;
+
+  box-shadow: var(--shadow);
+}
+
+.choice-card .number {
+  width: 54px;
+  height: 54px;
+
+  display: flex;
+
+  justify-content: center;
+  align-items: center;
+
+  margin-bottom: 20px;
+
+  border-radius: 16px;
+
+  background: var(--soft-blue);
+
+  color: var(--accent);
+
+  font-size: 24px;
+  font-weight: bold;
+}
+
+.choice-card h2 {
+  margin: 0;
+
+  font-size: 24px;
+}
+
+.choice-card p {
+  margin: 8px 0 0;
+
+  color: var(--muted);
+
+  line-height: 1.45;
+}
+
+/* -------------------- */
+/* LIVE-VY PERRONG */
+/* -------------------- */
+
+.detail-card {
+  overflow: hidden;
+
+  background: white;
+
+  border-radius: 26px;
+
+  box-shadow: var(--shadow);
+}
+
+.live-view {
+  min-height: 390px;
+
+  position: relative;
+
+  display: flex;
+
+  justify-content: center;
+  align-items: center;
+
+  overflow: hidden;
+
+  background: linear-gradient(
+    to bottom,
+    #d9edf8 0%,
+    #d9edf8 52%,
+    #8d9499 52%,
+    #8d9499 56%,
+    #d7d9dc 56%,
+    #d7d9dc 100%
+  );
+}
+
+.live-view::before,
+.live-view::after {
+  content: "";
+
+  position: absolute;
+
+  left: 8%;
+  right: 8%;
+
+  height: 8px;
+
+  background: #555d62;
+
+  border-radius: 20px;
+}
+
+.live-view::before {
+  bottom: 88px;
+}
+
+.live-view::after {
+  bottom: 54px;
+}
+
+.platform-sign {
+  position: relative;
+
+  z-index: 2;
+
+  padding: 18px 24px;
+
+  background: rgba(255, 255, 255, 0.95);
+
+  border-radius: 18px;
+
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.12);
+
+  font-size: 24px;
+
+  font-weight: bold;
+}
+
+.live-badge {
+  position: absolute;
+
+  top: 20px;
+  left: 20px;
+
+  z-index: 3;
+
+  padding: 9px 12px;
+
+  border-radius: 100px;
+
+  background: rgba(15, 24, 32, 0.8);
+
+  color: white;
+
+  font-size: 13px;
+
+  font-weight: bold;
+}
+
+/* -------------------- */
+/* DETALJER */
+/* -------------------- */
+
+.detail-body {
+  padding: 28px;
+}
+
+.detail-body h2 {
+  margin: 0;
+
+  font-size: 30px;
+}
+
+.detail-body p {
+  margin-top: 10px;
+
+  color: var(--muted);
+
+  line-height: 1.55;
+}
+
+.info-grid {
+  display: grid;
+
+  grid-template-columns: repeat(3, 1fr);
+
+  gap: 14px;
+
+  margin-top: 24px;
+}
+
+.info-box {
+  padding: 18px;
+
+  border-radius: 16px;
+
+  background: #f5f7f9;
+}
+
+.info-box span {
+  display: block;
+
+  margin-bottom: 6px;
+
+  color: var(--muted);
+
+  font-size: 13px;
+}
+
+.info-box strong {
+  font-size: 18px;
+}
+
+/* -------------------- */
+/* KNAPPAR */
+/* -------------------- */
+
+.button-row {
+  display: flex;
+
+  flex-wrap: wrap;
+
+  gap: 12px;
+
+  margin-top: 26px;
+}
+
+.primary-button,
+.secondary-button {
+  min-height: 58px;
+
+  padding: 0 22px;
+
+  border: none;
+
+  border-radius: 16px;
+
+  font-weight: bold;
+}
+
+.primary-button {
+  background: var(--accent);
+
+  color: white;
+}
+
+.secondary-button {
+  background: #edf1f4;
+
+  color: var(--text);
+}
+
+/* -------------------- */
+/* TÅGKARTA */
+/* -------------------- */
+
+.train-map-layout {
+  display: grid;
+
+  grid-template-columns:
+    minmax(0, 1fr)
+    330px;
+
+  gap: 20px;
+
+  align-items: stretch;
+}
+
+.map-panel {
+  position: relative;
+
+  overflow: hidden;
+
+  min-height: 650px;
+
+  background: white;
+
+  border-radius: 24px;
+
+  box-shadow: var(--shadow);
+}
+
+#trainMap {
+  width: 100%;
+
+  height: 650px;
+}
+
+.map-loading {
+  position: absolute;
+
+  top: 20px;
+  left: 50%;
+
+  z-index: 1000;
+
+  transform: translateX(-50%);
+
+  padding: 12px 18px;
+
+  border-radius: 14px;
+
+  background: white;
+
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
+
+  font-weight: bold;
+}
+
+.map-side-panel {
+  padding: 24px;
+
+  background: white;
+
+  border-radius: 24px;
+
+  box-shadow: var(--shadow);
+}
+
+.map-side-panel h2 {
+  margin-top: 0;
+
+  font-size: 26px;
+}
+
+.map-side-panel p {
+  color: var(--muted);
+
+  line-height: 1.5;
+}
+
+.map-status {
+  margin-top: 22px;
+
+  padding: 18px;
+
+  border-radius: 16px;
+
+  background: var(--soft-green);
+}
+
+.map-status span {
+  display: block;
+
+  color: var(--muted);
+
+  font-size: 13px;
+}
+
+.map-status strong {
+  display: block;
+
+  margin-top: 6px;
+
+  font-size: 18px;
+}
+
+.train-info-empty {
+  margin-top: 24px;
+
+  padding: 20px;
+
+  border-radius: 16px;
+
+  background: #f5f7f9;
+
+  color: var(--muted);
+
+  line-height: 1.5;
+}
+
+.selected-train {
+  margin-top: 24px;
+}
+
+.selected-train h3 {
+  margin: 0 0 14px;
+
+  font-size: 24px;
+}
+
+.selected-train-info {
+  display: grid;
+
+  gap: 10px;
+}
+
+.selected-train-row {
+  padding: 13px 14px;
+
+  border-radius: 12px;
+
+  background: #f5f7f9;
+}
+
+.selected-train-row span {
+  display: block;
+
+  margin-bottom: 4px;
+
+  color: var(--muted);
+
+  font-size: 12px;
+}
+
+.selected-train-row strong {
+  font-size: 16px;
+}
+
+/* -------------------- */
+/* TÅGMARKÖR */
+/* -------------------- */
+
+.train-marker {
+  display: flex;
+
+  justify-content: center;
+  align-items: center;
+
+  min-width: 38px;
+  height: 38px;
+
+  padding: 0 8px;
+
+  border: 3px solid white;
+
+  border-radius: 999px;
+
+  background: var(--accent-green);
+
+  color: white;
+
+  box-shadow: 0 3px 9px rgba(0, 0, 0, 0.28);
+
+  font-size: 11px;
+  font-weight: bold;
+
+  white-space: nowrap;
+}
+
+/* -------------------- */
+/* API FEL */
+/* -------------------- */
+
+.api-error {
+  padding: 22px;
+
+  border-radius: 16px;
+
+  background: #fff1f0;
+
+  color: #8d2620;
+
+  line-height: 1.5;
+}
+
+.api-help {
+  margin-top: 12px;
+
+  font-size: 14px;
+}
+
+/* -------------------- */
+/* FOOTER */
+/* -------------------- */
+
+.footer {
+  display: flex;
+
+  justify-content: space-between;
+
+  gap: 20px;
+
+  padding: 16px 34px;
+
+  border-top: 1px solid var(--border);
+
+  background: white;
+
+  color: var(--muted);
+
+  font-size: 13px;
+}
+
+/* -------------------- */
+/* RESPONSIVE */
+/* -------------------- */
+
+@media (max-width: 950px) {
+  .train-map-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .map-side-panel {
+    min-height: auto;
+  }
+}
+
+@media (max-width: 820px) {
+  .topbar {
+    padding: 18px 20px;
+  }
+
+  .main-content {
+    width: calc(100% - 28px);
+
+    padding-top: 34px;
+  }
+
+  .action-grid,
+  .choice-grid,
+  .info-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .footer {
+    flex-direction: column;
+
+    padding: 14px 20px;
+  }
+}
+
+@media (max-width: 560px) {
+  .hero h1 {
+    font-size: 40px;
+  }
+
+  .station-label {
+    font-size: 15px;
+  }
+
+  .clock {
+    font-size: 24px;
+  }
+
+  .date {
+    display: none;
+  }
+
+  .page-heading {
+    grid-template-columns: 1fr;
+  }
+
+  #trainMap,
+  .map-panel {
+    min-height: 520px;
+
+    height: 520px;
+  }
+}

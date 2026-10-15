@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="sv">
+  <head>
+    <meta charset="UTF-8" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>Reseskärmen</title>
+
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    />
+
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <div class="brand-wrap">
+          <div>
+            <p class="eyebrow">Reseskärmen</p>
+
+            <p class="station-label">
+              Du är här:
+              <strong>Alvesta station</strong>
+            </p>
+          </div>
+        </div>
+
+        <div class="clock-wrap">
+          <span id="clock" class="clock"> --:-- </span>
+
+          <span id="date" class="date"> -- </span>
+        </div>
+      </header>
+
+      <main id="app" class="main-content"></main>
+
+      <footer class="footer">
+        <span> High-Fidelity prototyp 1 </span>
+
+        <span> Publik pekskärm </span>
+      </footer>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <script src="script.js"></script>
+  </body>
+</html>

@@ -1,228 +1,518 @@
 const app = document.querySelector("#app");
 
-/* -------------------------------- */
-/* TRAFIKVERKET API */
-/* -------------------------------- */
+// Trafikverket API.
+// Lägg in din riktiga nyckel senare.
+// Utan nyckel används demodata.
 
 const TRAFIKVERKET_API_KEY = "DIN_API_NYCKEL_HÄR";
 
 const TRAFIKVERKET_URL = "https://api.trafikinfo.trafikverket.se/v2/data.json";
 
-/*
-    Hur ofta kartan uppdateras.
+const TRAIN_REFRESH_MS = 30000;
 
-    30000 = 30 sekunder.
-*/
+let lang = "sv";
 
-const TRAIN_REFRESH_TIME = 30000;
+let view = "home";
 
-/* -------------------------------- */
-/* GLOBALA VARIABLER */
-/* -------------------------------- */
+let viewParam = null;
 
-let trainMap = null;
+let stationSearch = "";
 
-let trainMarkerLayer = null;
+let stationSort = "az";
 
-let trainRefreshInterval = null;
+let map = null;
 
-/* -------------------------------- */
-/* PERRONG DATA */
-/* -------------------------------- */
+let markerLayer = null;
 
-const platforms = [
+let refreshTimer = null;
+
+let trains = [];
+
+let trainSearch = "";
+
+let trainSort = "number";
+
+let selectedTrain = null;
+
+let followTrain = false;
+
+let dataMode = "demo";
+
+const T = {
+  sv: {
+    app: "Reseskärmen",
+
+    here: "Du är här:",
+
+    language: "English",
+
+    footer1: "High-Fidelity prototyp",
+
+    footer2: "Publik pekskärm",
+
+    homeTitle: "Se stationer och tåg live medan du väntar.",
+
+    homeText:
+      "Utforska andra stationer och perronger direkt från skärmen. Se hur det ser ut på en annan plats eller följ ett tåg på kartan och upptäck var det befinner sig just nu.",
+
+    platforms: "Utforska perronger",
+
+    platformsText:
+      "Kika in på andra stationer och perronger. Välj en plats och öppna en live-vy för att se hur det ser ut där just nu.",
+
+    platformsOpen: "Utforska live-vyer",
+
+    trains: "Utforska tåg",
+
+    trainsText:
+      "Följ tåg på kartan och välj ett tåg för att se var det befinner sig. Öppna sedan tågets live-vy och följ resan.",
+
+    trainsOpen: "Öppna livekartan",
+
+    home: "Till startsidan",
+
+    stationTitle: "Vilken perrong vill du kika på?",
+
+    stationText:
+      "Sök efter exempelvis Alvesta, Malmö eller Växjö och öppna en live-vy från stationen.",
+
+    searchStation: "Sök station",
+
+    searchStationPh: "Skriv exempelvis Växjö",
+
+    sort: "Sortera",
+
+    az: "A–Ö",
+
+    za: "Ö–A",
+
+    noStation: "Inga stationer matchade sökningen.",
+
+    openPlatform: "Se perrongen live",
+
+    simulated: "SIMULERAD LIVE-VY",
+
+    platformInfo:
+      "Titta in på perrongen och få en känsla av vad som händer på platsen utan att själv behöva vara där.",
+
+    station: "Station",
+
+    region: "Område",
+
+    type: "Vy",
+
+    platformArea: "Live perrongvy",
+
+    another: "Utforska en annan perrong",
+
+    trainTitle: "Följ tågen live",
+
+    trainText:
+      "Se tågens senaste position direkt på kartan. Tryck på ett tåg för att välja det och öppna dess live-vy.",
+
+    loading: "Hämtar tågpositioner...",
+
+    liveMap: "Live tågkarta",
+
+    liveMapText:
+      "Tryck på ett tåg och följ dess position. Du kan även öppna en live-vy för att uppleva tåget under resan.",
+
+    updated: "Senast uppdaterad",
+
+    searchTrain: "Sök tågnummer",
+
+    searchTrainPh: "Exempel: 525",
+
+    sortTrain: "Sortera tåg",
+
+    sortNumber: "Tågnummer",
+
+    sortSpeed: "Hastighet",
+
+    mapTrains: "Tåg på kartan",
+
+    noTrain: "Inga tåg matchar sökningen.",
+
+    selectTrain: "Tryck på ett tåg på kartan eller i listan för att välja det.",
+
+    trainNo: "Tågnummer",
+
+    opNo: "Operativt tågnummer",
+
+    follow: "Följ tåget på kartan",
+
+    stopFollow: "Sluta följa",
+
+    trainLive: "Se tåget live",
+
+    closeTrainLive: "Stäng live-vy",
+
+    trainLiveTitle: "Live från tåget",
+
+    trainLiveText:
+      "Här kan resenären följa tågets resa genom en live-vy och se omgivningen medan tåget rör sig.",
+
+    trainLiveDemo: "SIMULERAD LIVE-VY FRÅN TÅGET",
+
+    refresh: "Uppdatera karta",
+
+    alvesta: "Visa Alvesta",
+
+    liveData: "Trafikverket live-data",
+
+    demo: "Demoläge",
+
+    demoText:
+      "API-nyckel saknas eller kunde inte användas. Kartan visar därför demodata tills nyckeln läggs in.",
+
+    apiFail: "Trafikverkets data kunde inte hämtas. Demodata används istället.",
+  },
+
+  en: {
+    app: "Travel Screen",
+
+    here: "You are here:",
+
+    language: "Svenska",
+
+    footer1: "High-Fidelity prototype",
+
+    footer2: "Public touch screen",
+
+    homeTitle: "Watch stations and trains live while you wait.",
+
+    homeText:
+      "Explore other stations and platforms directly from the screen. See what another location looks like or follow a train on the map and discover where it is right now.",
+
+    platforms: "Explore platforms",
+
+    platformsText:
+      "Take a look at other stations and platforms. Choose a location and open a live view to see what it looks like there.",
+
+    platformsOpen: "Explore live views",
+
+    trains: "Explore trains",
+
+    trainsText:
+      "Follow trains on the map and select one to see where it is. You can then open its live view and follow the journey.",
+
+    trainsOpen: "Open live map",
+
+    home: "Go to start page",
+
+    stationTitle: "Which platform would you like to see?",
+
+    stationText:
+      "Search for Alvesta, Malmö or Växjö and open a live view from the station.",
+
+    searchStation: "Search station",
+
+    searchStationPh: "For example Växjö",
+
+    sort: "Sort",
+
+    az: "A–Z",
+
+    za: "Z–A",
+
+    noStation: "No stations matched the search.",
+
+    openPlatform: "View platform live",
+
+    simulated: "SIMULATED LIVE VIEW",
+
+    platformInfo:
+      "Look into the platform and get a sense of what is happening there without actually being at the location.",
+
+    station: "Station",
+
+    region: "Area",
+
+    type: "View",
+
+    platformArea: "Live platform view",
+
+    another: "Explore another platform",
+
+    trainTitle: "Follow trains live",
+
+    trainText:
+      "See the latest train positions directly on the map. Tap a train to select it and open its live view.",
+
+    loading: "Loading train positions...",
+
+    liveMap: "Live train map",
+
+    liveMapText:
+      "Tap a train and follow its position. You can also open a live view and experience the train during its journey.",
+
+    updated: "Last updated",
+
+    searchTrain: "Search train number",
+
+    searchTrainPh: "Example: 525",
+
+    sortTrain: "Sort trains",
+
+    sortNumber: "Train number",
+
+    sortSpeed: "Speed",
+
+    mapTrains: "Trains on map",
+
+    noTrain: "No trains match the search.",
+
+    selectTrain: "Tap a train on the map or in the list to select it.",
+
+    trainNo: "Train number",
+
+    opNo: "Operational train number",
+
+    follow: "Follow train on map",
+
+    stopFollow: "Stop following",
+
+    trainLive: "Watch train live",
+
+    closeTrainLive: "Close live view",
+
+    trainLiveTitle: "Live from the train",
+
+    trainLiveText:
+      "Here the passenger can follow the journey through a live view and see the surroundings as the train moves.",
+
+    trainLiveDemo: "SIMULATED LIVE VIEW FROM TRAIN",
+
+    refresh: "Refresh map",
+
+    alvesta: "Show Alvesta",
+
+    liveData: "Trafikverket live data",
+
+    demo: "Demo mode",
+
+    demoText:
+      "The API key is missing or could not be used. Demo data is shown until the key is added.",
+
+    apiFail:
+      "Trafikverket data could not be loaded. Demo data is used instead.",
+  },
+};
+
+function t(key) {
+  return T[lang][key] || key;
+}
+
+function locale() {
+  if (lang === "sv") {
+    return "sv-SE";
+  }
+
+  return "en-GB";
+}
+
+const stations = [
   {
-    id: 1,
-
-    title: "Perrong 1",
-
-    description: "Tåg mot Växjö och Kalmar",
-
-    crowd: "Lugn",
+    id: "alvesta",
+    name: "Alvesta station",
+    city: "Alvesta",
+    region: "Småland",
   },
 
   {
-    id: 2,
-
-    title: "Perrong 2",
-
-    description: "Tåg mot Malmö och Köpenhamn",
-
-    crowd: "Måttligt",
+    id: "emmaboda",
+    name: "Emmaboda station",
+    city: "Emmaboda",
+    region: "Småland",
   },
 
   {
-    id: 3,
-
-    title: "Perrong 3",
-
-    description: "Tåg mot Jönköping och Nässjö",
-
-    crowd: "Lugn",
+    id: "kalmar",
+    name: "Kalmar Centralstation",
+    city: "Kalmar",
+    region: "Småland",
   },
 
   {
-    id: 4,
+    id: "malmo",
+    name: "Malmö Centralstation",
+    city: "Malmö",
+    region: "Skåne",
+  },
 
-    title: "Perrong 4",
+  {
+    id: "nassjo",
+    name: "Nässjö Centralstation",
+    city: "Nässjö",
+    region: "Småland",
+  },
 
-    description: "Tåg mot Stockholm och Linköping",
+  {
+    id: "varnamo",
+    name: "Värnamo station",
+    city: "Värnamo",
+    region: "Småland",
+  },
 
-    crowd: "Måttligt",
+  {
+    id: "vaxjo",
+    name: "Växjö station",
+    city: "Växjö",
+    region: "Småland",
+  },
+
+  {
+    id: "almhult",
+    name: "Älmhult station",
+    city: "Älmhult",
+    region: "Småland",
   },
 ];
 
-/* -------------------------------- */
-/* KLOCKA */
-/* -------------------------------- */
+const demoTrains = [
+  ["1038", 14.57, 56.91, 72, 25],
+
+  ["525", 14.81, 56.995, 118, 52],
+
+  ["1764", 14.95, 56.88, 91, 255],
+
+  ["1091", 13.93, 56.62, 104, 18],
+
+  ["542", 14.77, 57.17, 84, 340],
+].map(function (train) {
+  return {
+    Train: {
+      AdvertisedTrainNumber: train[0],
+
+      OperationalTrainNumber: train[0],
+    },
+
+    Position: {
+      WGS84: `POINT (${train[1]} ${train[2]})`,
+    },
+
+    Speed: train[3],
+
+    Bearing: train[4],
+
+    TimeStamp: new Date().toISOString(),
+
+    Status: {
+      Active: true,
+    },
+  };
+});
+
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll("&", "&amp;")
+
+    .replaceAll("<", "&lt;")
+
+    .replaceAll(">", "&gt;")
+
+    .replaceAll('"', "&quot;")
+
+    .replaceAll("'", "&#039;");
+}
+
+function updateChrome() {
+  document.querySelector("#appName").textContent = t("app");
+
+  document.querySelector("#youAreHere").textContent = t("here");
+
+  document.querySelector("#languageButton").textContent = t("language");
+
+  document.querySelector("#footerPrototype").textContent = t("footer1");
+
+  document.querySelector("#footerScreen").textContent = t("footer2");
+
+  document.documentElement.lang = lang;
+
+  updateClock();
+}
 
 function updateClock() {
   const now = new Date();
 
-  const time = now.toLocaleTimeString("sv-SE", {
-    hour: "2-digit",
+  document.querySelector("#clock").textContent = now.toLocaleTimeString(
+    locale(),
 
-    minute: "2-digit",
-  });
+    {
+      hour: "2-digit",
 
-  const date = now.toLocaleDateString("sv-SE", {
-    weekday: "long",
+      minute: "2-digit",
+    },
+  );
 
-    day: "numeric",
+  document.querySelector("#date").textContent = now.toLocaleDateString(
+    locale(),
 
-    month: "long",
-  });
+    {
+      weekday: "long",
 
-  document.querySelector("#clock").textContent = time;
+      day: "numeric",
 
-  document.querySelector("#date").textContent = date;
+      month: "long",
+    },
+  );
 }
 
 setInterval(updateClock, 1000);
 
-updateClock();
-
-/* -------------------------------- */
-/* RENSA TÅGKARTA */
-/* -------------------------------- */
-
-function destroyTrainMap() {
-  if (trainRefreshInterval) {
-    clearInterval(trainRefreshInterval);
-
-    trainRefreshInterval = null;
+function setView(newView, parameter = null) {
+  if (view === "trains" && newView !== "trains") {
+    destroyMap();
   }
 
-  if (trainMap) {
-    trainMap.remove();
+  view = newView;
 
-    trainMap = null;
+  viewParam = parameter;
+
+  render();
+
+  window.scrollTo({
+    top: 0,
+    behavior: "auto",
+  });
+}
+
+function render() {
+  if (view === "home") {
+    renderHome();
+
+    return;
   }
 
-  trainMarkerLayer = null;
+  if (view === "platforms") {
+    renderPlatforms();
+
+    return;
+  }
+
+  if (view === "platformDetail") {
+    renderPlatform(viewParam);
+
+    return;
+  }
+
+  if (view === "trains") {
+    renderTrains();
+  }
 }
 
-/* -------------------------------- */
-/* STARTSIDA */
-/* -------------------------------- */
-
-function renderHome() {
-  destroyTrainMap();
-
-  app.innerHTML = `
-
-        <section class="hero">
-
-            <h1>
-                Utforska stationen medan du väntar.
-            </h1>
-
-            <p>
-                Reseskärmen låter dig utforska
-                stationens perronger eller se
-                var aktiva tåg befinner sig
-                i realtid.
-            </p>
-
-        </section>
-
-
-        <section class="action-grid">
-
-
-            <button
-                class="action-card"
-                id="platformButton"
-            >
-
-                <h2>
-                    Utforska perrong
-                </h2>
-
-                <p>
-                    Välj en perrong och se
-                    vad som händer på
-                    stationens olika perronger.
-                </p>
-
-                <span class="link-label">
-                    Välj perrong
-                </span>
-
-            </button>
-
-
-            <button
-                class="action-card"
-                id="trainButton"
-            >
-
-                <h2>
-                    Utforska tåg
-                </h2>
-
-                <p>
-                    Öppna tågkartan och
-                    se var aktiva tåg
-                    befinner sig just nu.
-                </p>
-
-                <span class="link-label">
-                    Öppna tågkartan
-                </span>
-
-            </button>
-
-
-        </section>
-
-    `;
-
-  const platformButton = document.querySelector("#platformButton");
-
-  const trainButton = document.querySelector("#trainButton");
-
-  platformButton.addEventListener("click", renderPlatforms);
-
-  trainButton.addEventListener("click", renderTrainMap);
-}
-
-/* -------------------------------- */
-/* SIDRUBRIK */
-/* -------------------------------- */
-
-function createPageHeading(title, text) {
+function heading(title, description) {
   return `
 
         <section class="page-heading">
 
-
             <button
-                class="home-button"
+                class="nav-button"
                 id="homeButton"
+                type="button"
             >
 
-                Startsida
+                ${t("home")}
 
             </button>
 
@@ -233,120 +523,323 @@ function createPageHeading(title, text) {
                     ${title}
                 </h1>
 
+                <p>
+                    ${description}
+                </p>
+
+            </div>
+
+        </section>
+
+    `;
+}
+
+function bindHome() {
+  const button = document.querySelector("#homeButton");
+
+  if (!button) {
+    return;
+  }
+
+  button.addEventListener("click", function () {
+    setView("home");
+  });
+}
+
+function renderHome() {
+  app.innerHTML = `
+
+        <section class="hero-simple">
+
+            <h1>
+                ${t("homeTitle")}
+            </h1>
+
+            <p>
+                ${t("homeText")}
+            </p>
+
+        </section>
+
+
+        <section class="action-grid two-actions">
+
+
+            <button
+                class="action-card"
+                id="platformButton"
+                type="button"
+            >
+
+                <h2>
+                    ${t("platforms")}
+                </h2>
 
                 <p>
-                    ${text}
+                    ${t("platformsText")}
                 </p>
+
+                <span class="link-label">
+                    ${t("platformsOpen")}
+                </span>
+
+            </button>
+
+
+            <button
+                class="action-card"
+                id="trainButton"
+                type="button"
+            >
+
+                <h2>
+                    ${t("trains")}
+                </h2>
+
+                <p>
+                    ${t("trainsText")}
+                </p>
+
+                <span class="link-label">
+                    ${t("trainsOpen")}
+                </span>
+
+            </button>
+
+
+        </section>
+
+    `;
+
+  document
+    .querySelector("#platformButton")
+    .addEventListener("click", function () {
+      setView("platforms");
+    });
+
+  document.querySelector("#trainButton").addEventListener("click", function () {
+    setView("trains");
+  });
+}
+
+function renderPlatforms() {
+  app.innerHTML = `
+
+        ${heading(t("stationTitle"), t("stationText"))}
+
+
+        <section class="toolbar">
+
+
+            <div class="field-group">
+
+                <label for="stationSearch">
+
+                    ${t("searchStation")}
+
+                </label>
+
+
+                <input
+                    id="stationSearch"
+                    type="search"
+                    value="${escapeHtml(stationSearch)}"
+                    placeholder="${t("searchStationPh")}"
+                >
+
+            </div>
+
+
+            <div class="field-group">
+
+                <label for="stationSort">
+
+                    ${t("sort")}
+
+                </label>
+
+
+                <select id="stationSort">
+
+                    <option
+                        value="az"
+                        ${stationSort === "az" ? "selected" : ""}
+                    >
+
+                        ${t("az")}
+
+                    </option>
+
+
+                    <option
+                        value="za"
+                        ${stationSort === "za" ? "selected" : ""}
+                    >
+
+                        ${t("za")}
+
+                    </option>
+
+                </select>
 
             </div>
 
 
         </section>
 
-    `;
-}
 
-/* -------------------------------- */
-/* PERRONGER */
-/* -------------------------------- */
-
-function renderPlatforms() {
-  destroyTrainMap();
-
-  app.innerHTML = `
-
-        ${createPageHeading(
-          "Välj en perrong",
-
-          "Tryck på en perrong för att se vad som visas på den valda perrongen.",
-        )}
-
-
-        <section class="choice-grid">
-
-
-            ${platforms
-              .map(function (platform) {
-                return `
-
-                        <button
-                            class="choice-card"
-                            data-platform="${platform.id}"
-                        >
-
-
-                            <span class="number">
-
-                                ${platform.id}
-
-                            </span>
-
-
-                            <h2>
-
-                                ${platform.title}
-
-                            </h2>
-
-
-                            <p>
-
-                                ${platform.description}
-
-                            </p>
-
-
-                            <p>
-
-                                <strong>
-                                    Aktuellt läge:
-                                </strong>
-
-                                ${platform.crowd}
-
-                            </p>
-
-
-                        </button>
-
-                    `;
-              })
-              .join("")}
-
-
+        <section
+            id="stationGrid"
+            class="choice-grid"
+        >
         </section>
 
     `;
 
-  document.querySelector("#homeButton").addEventListener("click", renderHome);
+  bindHome();
 
-  const buttons = document.querySelectorAll("[data-platform]");
+  document
+    .querySelector("#stationSearch")
+    .addEventListener("input", function (event) {
+      stationSearch = event.target.value;
+
+      renderStationCards();
+    });
+
+  document
+    .querySelector("#stationSort")
+    .addEventListener("change", function (event) {
+      stationSort = event.target.value;
+
+      renderStationCards();
+    });
+
+  renderStationCards();
+}
+
+function renderStationCards() {
+  const grid = document.querySelector("#stationGrid");
+
+  const query = stationSearch.trim().toLocaleLowerCase("sv-SE");
+
+  let list = stations.filter(function (station) {
+    const text = `
+                    ${station.name}
+                    ${station.city}
+                    ${station.region}
+                    `.toLocaleLowerCase("sv-SE");
+
+    return text.includes(query);
+  });
+
+  list.sort(function (a, b) {
+    const result = a.name.localeCompare(b.name, "sv-SE");
+
+    if (stationSort === "az") {
+      return result;
+    }
+
+    return -result;
+  });
+
+  if (list.length === 0) {
+    grid.innerHTML = `
+
+            <div class="empty-state">
+
+                ${t("noStation")}
+
+            </div>
+
+        `;
+
+    return;
+  }
+
+  grid.innerHTML = list
+    .map(function (station) {
+      let description;
+
+      if (lang === "sv") {
+        description = `Kika in på ${station.name} och se hur perrongområdet kan upplevas live.`;
+      } else {
+        description = `Take a live look at the platform area at ${station.name}.`;
+      }
+
+      return `
+
+                    <button
+                        class="choice-card"
+                        type="button"
+                        data-station="${station.id}"
+                    >
+
+
+                        <span class="location-label">
+
+                            ${station.region}
+
+                        </span>
+
+
+                        <h2>
+
+                            ${station.name}
+
+                        </h2>
+
+
+                        <p>
+
+                            ${description}
+
+                        </p>
+
+
+                        <span class="link-label">
+
+                            ${t("openPlatform")}
+
+                        </span>
+
+
+                    </button>
+
+                `;
+    })
+    .join("");
+
+  const buttons = grid.querySelectorAll("[data-station]");
 
   for (const button of buttons) {
     button.addEventListener("click", function () {
-      const id = Number(button.dataset.platform);
-
-      renderPlatformDetail(id);
+      setView("platformDetail", button.dataset.station);
     });
   }
 }
 
-/* -------------------------------- */
-/* PERRONG DETALJ */
-/* -------------------------------- */
-
-function renderPlatformDetail(id) {
-  const platform = platforms.find(function (item) {
+function renderPlatform(id) {
+  const station = stations.find(function (item) {
     return item.id === id;
   });
 
+  if (!station) {
+    setView("platforms");
+
+    return;
+  }
+
+  let description;
+
+  if (lang === "sv") {
+    description = `Du tittar just nu på ${station.name}. Se hur platsen ser ut och vad som händer på perrongen.`;
+  } else {
+    description = `You are currently viewing ${station.name}. See what the location looks like and what is happening on the platform.`;
+  }
+
   app.innerHTML = `
 
-        ${createPageHeading(
-          platform.title,
-
-          "Här visas den valda perrongen.",
-        )}
+        ${heading(station.name, description)}
 
 
         <section class="detail-card">
@@ -354,40 +847,30 @@ function renderPlatformDetail(id) {
 
             <div class="live-view">
 
-
                 <span class="live-badge">
 
-                    LIVE-VY
+                    ${t("simulated")}
 
                 </span>
 
 
                 <div class="platform-sign">
 
-                    ${platform.title}
-                    •
-                    Alvesta
+                    ${station.name}
 
                 </div>
-
 
             </div>
 
 
             <div class="detail-body">
 
-
                 <h2>
-
-                    ${platform.title}
-
+                    ${station.name}
                 </h2>
 
-
                 <p>
-
-                    ${platform.description}
-
+                    ${t("platformInfo")}
                 </p>
 
 
@@ -397,13 +880,11 @@ function renderPlatformDetail(id) {
                     <div class="info-box">
 
                         <span>
-                            Aktuellt läge
+                            ${t("station")}
                         </span>
 
                         <strong>
-
-                            ${platform.crowd}
-
+                            ${station.city}
                         </strong>
 
                     </div>
@@ -412,11 +893,11 @@ function renderPlatformDetail(id) {
                     <div class="info-box">
 
                         <span>
-                            Station
+                            ${t("region")}
                         </span>
 
                         <strong>
-                            Alvesta C
+                            ${station.region}
                         </strong>
 
                     </div>
@@ -425,13 +906,11 @@ function renderPlatformDetail(id) {
                     <div class="info-box">
 
                         <span>
-                            Perrong
+                            ${t("type")}
                         </span>
 
                         <strong>
-
-                            ${platform.id}
-
+                            ${t("platformArea")}
                         </strong>
 
                     </div>
@@ -445,20 +924,22 @@ function renderPlatformDetail(id) {
 
                     <button
                         class="primary-button"
-                        id="platformHomeButton"
+                        id="platformHome"
+                        type="button"
                     >
 
-                        Till startsidan
+                        ${t("home")}
 
                     </button>
 
 
                     <button
                         class="secondary-button"
-                        id="otherPlatformButton"
+                        id="platformBack"
+                        type="button"
                     >
 
-                        Välj annan perrong
+                        ${t("another")}
 
                     </button>
 
@@ -473,31 +954,25 @@ function renderPlatformDetail(id) {
 
     `;
 
-  document.querySelector("#homeButton").addEventListener("click", renderHome);
+  bindHome();
 
   document
-    .querySelector("#platformHomeButton")
-    .addEventListener("click", renderHome);
+    .querySelector("#platformHome")
+    .addEventListener("click", function () {
+      setView("home");
+    });
 
   document
-    .querySelector("#otherPlatformButton")
-    .addEventListener("click", renderPlatforms);
+    .querySelector("#platformBack")
+    .addEventListener("click", function () {
+      setView("platforms");
+    });
 }
 
-/* -------------------------------- */
-/* TÅGKARTA */
-/* -------------------------------- */
-
-function renderTrainMap() {
-  destroyTrainMap();
-
+function renderTrains() {
   app.innerHTML = `
 
-        ${createPageHeading(
-          "Tåg i realtid",
-
-          "Kartan visar senast rapporterade position för aktiva tåg. Tryck på ett tåg på kartan för mer information.",
-        )}
+        ${heading(t("trainTitle"), t("trainText"))}
 
 
         <section class="train-map-layout">
@@ -505,13 +980,12 @@ function renderTrainMap() {
 
             <div class="map-panel">
 
-
                 <div
-                    id="mapLoading"
-                    class="map-loading"
+                    id="mapBadge"
+                    class="map-badge"
                 >
 
-                    Hämtar tågpositioner...
+                    ${t("loading")}
 
                 </div>
 
@@ -519,40 +993,97 @@ function renderTrainMap() {
                 <div id="trainMap">
                 </div>
 
-
             </div>
 
 
-            <aside
-                class="map-side-panel"
-            >
+            <aside class="map-side-panel">
 
 
                 <h2>
-                    Live tågkarta
+                    ${t("liveMap")}
                 </h2>
 
-
                 <p>
-                    Välj ett tåg direkt
-                    på kartan för att se
-                    information om tågets
-                    position och hastighet.
+                    ${t("liveMapText")}
                 </p>
 
 
                 <div class="map-status">
 
                     <span>
-                        Senast uppdaterad
+                        ${t("updated")}
                     </span>
 
-                    <strong
-                        id="mapUpdated"
-                    >
-                        Hämtar data...
+                    <strong id="mapUpdated">
+                        --:--:--
                     </strong>
 
+                </div>
+
+
+                <div class="train-controls">
+
+
+                    <div class="field-group">
+
+                        <label for="trainSearch">
+
+                            ${t("searchTrain")}
+
+                        </label>
+
+
+                        <input
+                            id="trainSearch"
+                            type="search"
+                            value="${escapeHtml(trainSearch)}"
+                            placeholder="${t("searchTrainPh")}"
+                        >
+
+                    </div>
+
+
+                    <div class="field-group">
+
+                        <label for="trainSort">
+
+                            ${t("sortTrain")}
+
+                        </label>
+
+
+                        <select id="trainSort">
+
+
+                            <option
+                                value="number"
+                                ${trainSort === "number" ? "selected" : ""}
+                            >
+
+                                ${t("sortNumber")}
+
+                            </option>
+
+
+                            <option
+                                value="speed"
+                                ${trainSort === "speed" ? "selected" : ""}
+                            >
+
+                                ${t("sortSpeed")}
+
+                            </option>
+
+
+                        </select>
+
+                    </div>
+
+
+                </div>
+
+
+                <div id="sourceNote">
                 </div>
 
 
@@ -561,9 +1092,7 @@ function renderTrainMap() {
                     class="train-info-empty"
                 >
 
-                    Tryck på ett tåg
-                    på kartan för
-                    att visa detaljer.
+                    ${t("selectTrain")}
 
                 </div>
 
@@ -573,24 +1102,38 @@ function renderTrainMap() {
 
                     <button
                         class="secondary-button"
-                        id="refreshTrainsButton"
+                        id="refreshButton"
+                        type="button"
                     >
 
-                        Uppdatera karta
+                        ${t("refresh")}
 
                     </button>
 
 
                     <button
                         class="secondary-button"
-                        id="centerAlvestaButton"
+                        id="centerButton"
+                        type="button"
                     >
 
-                        Visa Alvesta
+                        ${t("alvesta")}
 
                     </button>
 
 
+                </div>
+
+
+                <h3>
+                    ${t("mapTrains")}
+                </h3>
+
+
+                <div
+                    id="trainList"
+                    class="train-list-small"
+                >
                 </div>
 
 
@@ -601,39 +1144,53 @@ function renderTrainMap() {
 
     `;
 
-  document.querySelector("#homeButton").addEventListener("click", renderHome);
+  bindHome();
+
+  createMap();
+
+  loadTrains();
 
   document
-    .querySelector("#refreshTrainsButton")
-    .addEventListener("click", loadTrainPositions);
+    .querySelector("#trainSearch")
+    .addEventListener("input", function (event) {
+      trainSearch = event.target.value;
+
+      renderTrainData();
+    });
 
   document
-    .querySelector("#centerAlvestaButton")
-    .addEventListener("click", centerMapOnAlvesta);
+    .querySelector("#trainSort")
+    .addEventListener("change", function (event) {
+      trainSort = event.target.value;
 
-  createTrainMap();
+      renderTrainData();
+    });
 
-  loadTrainPositions();
+  document
+    .querySelector("#refreshButton")
+    .addEventListener("click", loadTrains);
 
-  trainRefreshInterval = setInterval(loadTrainPositions, TRAIN_REFRESH_TIME);
+  document
+    .querySelector("#centerButton")
+    .addEventListener("click", function () {
+      followTrain = false;
+
+      map.setView([56.899, 14.556], 8);
+
+      if (selectedTrain) {
+        showTrain(selectedTrain);
+      }
+    });
+
+  refreshTimer = setInterval(loadTrains, TRAIN_REFRESH_MS);
 }
 
-/* -------------------------------- */
-/* SKAPA LEAFLET KARTA */
-/* -------------------------------- */
-
-function createTrainMap() {
-  /*
-        Alvesta ungefärliga koordinater.
-    */
-
-  const alvestaLatitude = 56.899;
-
-  const alvestaLongitude = 14.556;
-
-  trainMap = L.map("trainMap", {
+function createMap() {
+  map = L.map("trainMap", {
     zoomControl: true,
-  }).setView([alvestaLatitude, alvestaLongitude], 7);
+
+    tap: true,
+  }).setView([56.899, 14.556], 7);
 
   L.tileLayer(
     "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
@@ -643,14 +1200,10 @@ function createTrainMap() {
 
       attribution: "&copy; OpenStreetMap",
     },
-  ).addTo(trainMap);
-
-  /*
-        Markering av Alvesta station.
-    */
+  ).addTo(map);
 
   L.circleMarker(
-    [alvestaLatitude, alvestaLongitude],
+    [56.899, 14.556],
 
     {
       radius: 9,
@@ -664,51 +1217,46 @@ function createTrainMap() {
       fillOpacity: 1,
     },
   )
-    .addTo(trainMap)
+    .addTo(map)
     .bindPopup("<strong>Alvesta station</strong>");
 
-  trainMarkerLayer = L.layerGroup().addTo(trainMap);
+  markerLayer = L.layerGroup().addTo(map);
 }
 
-/* -------------------------------- */
-/* CENTRERA ALVESTA */
-/* -------------------------------- */
+function destroyMap() {
+  if (refreshTimer) {
+    clearInterval(refreshTimer);
 
-function centerMapOnAlvesta() {
-  if (!trainMap) {
+    refreshTimer = null;
+  }
+
+  if (map) {
+    map.remove();
+
+    map = null;
+  }
+
+  markerLayer = null;
+}
+
+function hasKey() {
+  return TRAFIKVERKET_API_KEY && TRAFIKVERKET_API_KEY !== "DIN_API_NYCKEL_HÄR";
+}
+
+async function loadTrains() {
+  const badge = document.querySelector("#mapBadge");
+
+  if (badge) {
+    badge.textContent = t("loading");
+  }
+
+  if (!hasKey()) {
+    useDemo(false);
+
     return;
   }
 
-  trainMap.setView([56.899, 14.556], 8);
-}
-
-/* -------------------------------- */
-/* HÄMTA TÅGPOSITIONER */
-/* -------------------------------- */
-
-async function loadTrainPositions() {
-  const loading = document.querySelector("#mapLoading");
-
-  if (loading) {
-    loading.style.display = "block";
-  }
-
-  /*
-        Kontrollera API-nyckeln.
-    */
-
-  if (!TRAFIKVERKET_API_KEY || TRAFIKVERKET_API_KEY === "DIN_API_NYCKEL_HÄR") {
-    showApiKeyError();
-
-    return;
-  }
-
-  /*
-        Trafikverkets API tar emot
-        XML men returnerar JSON.
-    */
-
-  const requestBody = `
+  const body = `
 
         <REQUEST>
 
@@ -739,150 +1287,147 @@ async function loadTrainPositions() {
     `;
 
   try {
-    const response = await fetch(TRAFIKVERKET_URL, {
-      method: "POST",
+    const response = await fetch(
+      TRAFIKVERKET_URL,
 
-      headers: {
-        "Content-Type": "text/xml",
+      {
+        method: "POST",
+
+        headers: {
+          "Content-Type": "text/xml",
+        },
+
+        body: body,
       },
-
-      body: requestBody,
-    });
+    );
 
     if (!response.ok) {
-      throw new Error("HTTP-fel: " + response.status);
+      throw new Error(`HTTP ${response.status}`);
     }
 
-    const data = await response.json();
+    const json = await response.json();
 
-    /*
-            Trafikverket kan returnera
-            fel inne i JSON-svaret även
-            om HTTP-anropet lyckades.
-        */
+    const result = json?.RESPONSE?.RESULT?.[0];
 
-    const result = data?.RESPONSE?.RESULT?.[0];
-
-    if (!result) {
-      throw new Error("API-svaret innehöll ingen data.");
+    if (
+      !result ||
+      result.ERROR ||
+      !Array.isArray(result.TrainPosition) ||
+      result.TrainPosition.length === 0
+    ) {
+      throw new Error("No train data");
     }
 
-    if (result.ERROR) {
-      console.error(result.ERROR);
+    trains = result.TrainPosition;
 
-      throw new Error("Trafikverket returnerade ett API-fel.");
-    }
+    dataMode = "live";
 
-    const positions = result.TrainPosition || [];
+    updateSource(false);
 
-    displayTrainPositions(positions);
+    renderTrainData();
 
     updateMapTime();
 
-    if (loading) {
-      loading.style.display = "none";
-    }
+    refreshSelected();
   } catch (error) {
     console.error(error);
 
-    showApiError(error.message);
+    useDemo(true);
   }
 }
 
-/* -------------------------------- */
-/* VISA TÅGPOSITIONER */
-/* -------------------------------- */
+function useDemo(failed) {
+  trains = demoTrains.map(function (train) {
+    return {
+      ...train,
 
-function displayTrainPositions(positions) {
-  if (!trainMarkerLayer) {
+      TimeStamp: new Date().toISOString(),
+    };
+  });
+
+  dataMode = "demo";
+
+  updateSource(failed);
+
+  renderTrainData();
+
+  updateMapTime();
+
+  refreshSelected();
+}
+
+function updateSource(failed) {
+  const note = document.querySelector("#sourceNote");
+
+  const badge = document.querySelector("#mapBadge");
+
+  if (!note || !badge) {
     return;
   }
 
-  trainMarkerLayer.clearLayers();
+  if (dataMode === "live") {
+    note.innerHTML = `
 
-  for (const position of positions) {
-    /*
-            Filtrera bort
-            inaktiva tåg.
-        */
+            <div class="api-note">
 
-    if (position.Status && position.Status.Active === false) {
-      continue;
-    }
+                <strong>
+                    ${t("liveData")}
+                </strong>
 
-    const coordinates = parseWgs84(position?.Position?.WGS84);
+            </div>
 
-    if (!coordinates) {
-      continue;
-    }
+        `;
 
-    const train = position.Train || {};
+    badge.textContent = t("liveData");
 
-    const displayedNumber =
-      train.AdvertisedTrainNumber || train.OperationalTrainNumber || "Tåg";
-
-    const marker = createTrainMarker(
-      coordinates.latitude,
-      coordinates.longitude,
-      displayedNumber,
-    );
-
-    marker.addTo(trainMarkerLayer);
-
-    marker.on("click", function () {
-      showSelectedTrain(position);
-    });
-  }
-}
-
-/* -------------------------------- */
-/* SKAPA TÅGMARKÖR */
-/* -------------------------------- */
-
-function createTrainMarker(latitude, longitude, trainNumber) {
-  const icon = L.divIcon({
-    className: "",
-
-    html: `
-                    <div
-                        class="train-marker"
-                    >
-                        ${trainNumber}
-                    </div>
-                    `,
-
-    iconSize: [48, 38],
-
-    iconAnchor: [24, 19],
-  });
-
-  return L.marker([latitude, longitude], {
-    icon: icon,
-  });
-}
-
-/* -------------------------------- */
-/* PARSA WGS84 */
-/* -------------------------------- */
-
-/*
-    Trafikverket skickar exempelvis:
-
-    POINT (14.12345 57.98765)
-
-    Första numret:
-    longitude
-
-    Andra numret:
-    latitude
-*/
-
-function parseWgs84(value) {
-  if (!value) {
-    return null;
+    return;
   }
 
-  const match = value.match(/POINT\s*\(\s*([-\d.]+)\s+([-\d.]+)\s*\)/i);
+  note.innerHTML = `
+
+        <div
+            class="${failed ? "api-error" : "api-note"}"
+        >
+
+            <strong>
+
+                ${failed ? t("apiFail") : t("demo")}
+
+            </strong>
+
+            <br>
+
+            ${t("demoText")}
+
+        </div>
+
+    `;
+
+  badge.textContent = t("demo");
+}
+
+function trainNo(train) {
+  return String(
+    train?.Train?.AdvertisedTrainNumber ||
+      train?.Train?.OperationalTrainNumber ||
+      "?",
+  );
+}
+
+function trainSpeed(train) {
+  const number = Number(train?.Speed);
+
+  if (Number.isFinite(number)) {
+    return Math.round(number);
+  }
+
+  return 0;
+}
+
+function coords(value) {
+  const match = String(value || "").match(
+    /POINT\s*\(\s*([-\d.]+)\s+([-\d.]+)\s*\)/i,
+  );
 
   if (!match) {
     return null;
@@ -892,127 +1437,207 @@ function parseWgs84(value) {
 
   const latitude = Number(match[2]);
 
-  if (Number.isNaN(latitude) || Number.isNaN(longitude)) {
+  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
     return null;
   }
 
   return {
-    latitude: latitude,
+    lat: latitude,
 
-    longitude: longitude,
+    lon: longitude,
   };
 }
 
-/* -------------------------------- */
-/* VISA VALT TÅG */
-/* -------------------------------- */
+function renderTrainData() {
+  if (!markerLayer) {
+    return;
+  }
 
-function showSelectedTrain(position) {
+  markerLayer.clearLayers();
+
+  const query = trainSearch.trim().toLowerCase();
+
+  let list = trains.filter(function (train) {
+    return trainNo(train).toLowerCase().includes(query);
+  });
+
+  list.sort(function (a, b) {
+    if (trainSort === "speed") {
+      return trainSpeed(b) - trainSpeed(a);
+    }
+
+    return trainNo(a).localeCompare(
+      trainNo(b),
+
+      undefined,
+
+      {
+        numeric: true,
+      },
+    );
+  });
+
+  for (const train of list) {
+    const position = coords(train?.Position?.WGS84);
+
+    if (!position) {
+      continue;
+    }
+
+    const icon = L.divIcon({
+      className: "",
+
+      html: `
+
+                        <div class="train-marker">
+
+                            ${escapeHtml(trainNo(train))}
+
+                        </div>
+
+                    `,
+
+      iconSize: [52, 40],
+
+      iconAnchor: [26, 20],
+    });
+
+    const marker = L.marker(
+      [position.lat, position.lon],
+
+      {
+        icon: icon,
+      },
+    ).addTo(markerLayer);
+
+    marker.on("click", function () {
+      selectTrain(train, true);
+    });
+  }
+
+  const listContainer = document.querySelector("#trainList");
+
+  if (list.length === 0) {
+    listContainer.innerHTML = `
+
+            <div class="empty-state">
+
+                ${t("noTrain")}
+
+            </div>
+
+        `;
+
+    return;
+  }
+
+  listContainer.innerHTML = list
+    .slice(0, 20)
+    .map(function (train) {
+      return `
+
+                    <button
+                        class="train-list-button"
+                        type="button"
+                        data-id="${escapeHtml(trainNo(train))}"
+                    >
+
+                        <span>
+
+                            <strong>
+
+                                ${t("trainNo")}
+                                ${escapeHtml(trainNo(train))}
+
+                            </strong>
+
+                        </span>
+
+
+                    </button>
+
+                `;
+    })
+    .join("");
+
+  const buttons = listContainer.querySelectorAll("[data-id]");
+
+  for (const button of buttons) {
+    button.addEventListener("click", function () {
+      const train = list.find(function (item) {
+        return trainNo(item) === button.dataset.id;
+      });
+
+      if (train) {
+        selectTrain(train, true);
+      }
+    });
+  }
+}
+
+function selectTrain(train, center) {
+  selectedTrain = train;
+
+  showTrain(train);
+
+  const position = coords(train?.Position?.WGS84);
+
+  if (center && position && map) {
+    map.setView(
+      [position.lat, position.lon],
+
+      Math.max(map.getZoom(), 9),
+    );
+  }
+}
+
+function showTrain(train) {
   const container = document.querySelector("#selectedTrain");
 
   if (!container) {
     return;
   }
 
-  const train = position.Train || {};
-
-  const trainNumber =
-    train.AdvertisedTrainNumber || train.OperationalTrainNumber || "Okänt";
-
-  const operationalNumber = train.OperationalTrainNumber || "Okänt";
-
-  const speed =
-    position.Speed !== undefined ? position.Speed + " km/h" : "Saknas";
-
-  const bearing =
-    position.Bearing !== undefined ? position.Bearing + "°" : "Saknas";
-
-  const time = formatTrainTime(position.TimeStamp);
-
   container.className = "selected-train";
 
   container.innerHTML = `
 
         <h3>
-            Tåg ${trainNumber}
+
+            ${t("trainNo")}
+            ${escapeHtml(trainNo(train))}
+
         </h3>
 
 
-        <div
-            class="selected-train-info"
-        >
+        <div class="selected-train-info">
 
 
-            <div
-                class="selected-train-row"
-            >
+            <div class="selected-train-row">
 
                 <span>
-                    Tågnummer
+                    ${t("trainNo")}
                 </span>
 
                 <strong>
-                    ${trainNumber}
+
+                    ${escapeHtml(trainNo(train))}
+
                 </strong>
 
             </div>
 
 
-            <div
-                class="selected-train-row"
-            >
+            <div class="selected-train-row">
 
                 <span>
-                    Operativt tågnummer
+                    ${t("opNo")}
                 </span>
 
                 <strong>
-                    ${operationalNumber}
-                </strong>
 
-            </div>
+                    ${escapeHtml(train?.Train?.OperationalTrainNumber || "–")}
 
-
-            <div
-                class="selected-train-row"
-            >
-
-                <span>
-                    Hastighet
-                </span>
-
-                <strong>
-                    ${speed}
-                </strong>
-
-            </div>
-
-
-            <div
-                class="selected-train-row"
-            >
-
-                <span>
-                    Riktning
-                </span>
-
-                <strong>
-                    ${bearing}
-                </strong>
-
-            </div>
-
-
-            <div
-                class="selected-train-row"
-            >
-
-                <span>
-                    Position registrerad
-                </span>
-
-                <strong>
-                    ${time}
                 </strong>
 
             </div>
@@ -1020,36 +1645,156 @@ function showSelectedTrain(position) {
 
         </div>
 
+
+        <div class="button-row">
+
+
+            <button
+                class="primary-button"
+                id="trainLiveButton"
+                type="button"
+            >
+
+                ${t("trainLive")}
+
+            </button>
+
+
+            <button
+                class="secondary-button"
+                id="followButton"
+                type="button"
+            >
+
+                ${followTrain ? t("stopFollow") : t("follow")}
+
+            </button>
+
+
+            <button
+                class="secondary-button"
+                id="trainHome"
+                type="button"
+            >
+
+                ${t("home")}
+
+            </button>
+
+
+        </div>
+
+
+        <div
+            id="trainLiveView"
+            class="train-live-view hidden"
+        >
+
+            <div class="train-live-screen">
+
+                <span class="live-badge">
+
+                    ${t("trainLiveDemo")}
+
+                </span>
+
+
+                <div class="train-window-scene">
+
+                    <div class="train-horizon">
+                    </div>
+
+                    <div class="train-landscape">
+                    </div>
+
+                    <div class="train-track">
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <div class="train-live-copy">
+
+                <h3>
+                    ${t("trainLiveTitle")}
+                </h3>
+
+                <p>
+                    ${t("trainLiveText")}
+                </p>
+
+            </div>
+
+        </div>
+
     `;
-}
 
-/* -------------------------------- */
-/* FORMATERA TID */
-/* -------------------------------- */
+  const liveButton = document.querySelector("#trainLiveButton");
 
-function formatTrainTime(timestamp) {
-  if (!timestamp) {
-    return "Saknas";
-  }
+  liveButton.addEventListener("click", function () {
+    const liveView = document.querySelector("#trainLiveView");
 
-  const date = new Date(timestamp);
+    const isHidden = liveView.classList.contains("hidden");
 
-  if (Number.isNaN(date.getTime())) {
-    return timestamp;
-  }
+    if (isHidden) {
+      liveView.classList.remove("hidden");
 
-  return date.toLocaleTimeString("sv-SE", {
-    hour: "2-digit",
+      liveButton.textContent = t("closeTrainLive");
+    } else {
+      liveView.classList.add("hidden");
 
-    minute: "2-digit",
+      liveButton.textContent = t("trainLive");
+    }
+  });
 
-    second: "2-digit",
+  document
+    .querySelector("#followButton")
+    .addEventListener("click", function () {
+      followTrain = !followTrain;
+
+      showTrain(train);
+
+      if (followTrain) {
+        selectTrain(train, true);
+      }
+    });
+
+  document.querySelector("#trainHome").addEventListener("click", function () {
+    setView("home");
   });
 }
 
-/* -------------------------------- */
-/* SENAST UPPDATERAD */
-/* -------------------------------- */
+function refreshSelected() {
+  if (!selectedTrain) {
+    return;
+  }
+
+  const current = trains.find(function (train) {
+    return trainNo(train) === trainNo(selectedTrain);
+  });
+
+  if (!current) {
+    return;
+  }
+
+  selectedTrain = current;
+
+  showTrain(current);
+
+  if (followTrain) {
+    const position = coords(current?.Position?.WGS84);
+
+    if (position && map) {
+      map.setView(
+        [position.lat, position.lon],
+
+        Math.max(map.getZoom(), 9),
+      );
+    }
+  }
+}
 
 function updateMapTime() {
   const element = document.querySelector("#mapUpdated");
@@ -1058,96 +1803,37 @@ function updateMapTime() {
     return;
   }
 
-  const now = new Date();
+  element.textContent = new Date().toLocaleTimeString(
+    locale(),
 
-  element.textContent = now.toLocaleTimeString("sv-SE", {
-    hour: "2-digit",
+    {
+      hour: "2-digit",
 
-    minute: "2-digit",
+      minute: "2-digit",
 
-    second: "2-digit",
+      second: "2-digit",
+    },
+  );
+}
+
+document
+  .querySelector("#languageButton")
+  .addEventListener("click", function () {
+    if (view === "trains") {
+      destroyMap();
+    }
+
+    if (lang === "sv") {
+      lang = "en";
+    } else {
+      lang = "sv";
+    }
+
+    updateChrome();
+
+    render();
   });
-}
 
-/* -------------------------------- */
-/* API KEY FEL */
-/* -------------------------------- */
-
-function showApiKeyError() {
-  const loading = document.querySelector("#mapLoading");
-
-  if (loading) {
-    loading.style.display = "none";
-  }
-
-  const selectedTrain = document.querySelector("#selectedTrain");
-
-  if (!selectedTrain) {
-    return;
-  }
-
-  selectedTrain.className = "api-error";
-
-  selectedTrain.innerHTML = `
-
-        <strong>
-            Trafikverket API-nyckel saknas.
-        </strong>
-
-        <div class="api-help">
-
-            Öppna script.js och ersätt
-            DIN_API_NYCKEL_HÄR
-            med din Trafikverket API-nyckel.
-
-        </div>
-
-    `;
-}
-
-/* -------------------------------- */
-/* API FEL */
-/* -------------------------------- */
-
-function showApiError(message) {
-  const loading = document.querySelector("#mapLoading");
-
-  if (loading) {
-    loading.style.display = "none";
-  }
-
-  const selectedTrain = document.querySelector("#selectedTrain");
-
-  if (!selectedTrain) {
-    return;
-  }
-
-  selectedTrain.className = "api-error";
-
-  selectedTrain.innerHTML = `
-
-        <strong>
-            Kunde inte hämta
-            tågpositioner.
-        </strong>
-
-
-        <div class="api-help">
-
-            ${message}
-
-            <br><br>
-
-            Kontrollera API-nyckeln
-            och webbläsarens konsol.
-
-        </div>
-
-    `;
-}
-
-/* -------------------------------- */
-/* STARTA APPEN */
-/* -------------------------------- */
+updateChrome();
 
 renderHome();

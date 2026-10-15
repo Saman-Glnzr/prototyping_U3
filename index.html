@@ -2,7 +2,6 @@
 <html lang="sv">
   <head>
     <meta charset="UTF-8" />
-
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
     <title>Reseskärmen</title>
@@ -18,30 +17,35 @@
   <body>
     <div class="app-shell">
       <header class="topbar">
-        <div class="brand-wrap">
-          <div>
-            <p class="eyebrow">Reseskärmen</p>
+        <div>
+          <p class="eyebrow" id="appName">Reseskärmen</p>
 
-            <p class="station-label">
-              Du är här:
-              <strong>Alvesta station</strong>
-            </p>
-          </div>
+          <p class="station-label">
+            <span id="youAreHere"> Du är här: </span>
+
+            <strong id="currentStation"> Alvesta station </strong>
+          </p>
         </div>
 
-        <div class="clock-wrap">
-          <span id="clock" class="clock"> --:-- </span>
+        <div class="topbar-actions">
+          <div class="clock-wrap">
+            <span id="clock" class="clock"> --:-- </span>
 
-          <span id="date" class="date"> -- </span>
+            <span id="date" class="date"> -- </span>
+          </div>
+
+          <button class="language-button" id="languageButton" type="button">
+            English
+          </button>
         </div>
       </header>
 
       <main id="app" class="main-content"></main>
 
       <footer class="footer">
-        <span> High-Fidelity prototyp 1 </span>
+        <span id="footerPrototype"> High-Fidelity prototyp </span>
 
-        <span> Publik pekskärm </span>
+        <span id="footerScreen"> Publik pekskärm </span>
       </footer>
     </div>
 

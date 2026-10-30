@@ -3,53 +3,13 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-    <title>Reseskärmen</title>
-
-    <link
-      rel="stylesheet"
-      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-    />
+    <title>Quiz – High Fidelity 1</title>
 
     <link rel="stylesheet" href="styles.css" />
   </head>
 
   <body>
-    <div class="app-shell">
-      <header class="topbar">
-        <div>
-          <p class="eyebrow" id="appName">Reseskärmen</p>
-
-          <p class="station-label">
-            <span id="youAreHere"> Du är här: </span>
-
-            <strong id="currentStation"> Alvesta station </strong>
-          </p>
-        </div>
-
-        <div class="topbar-actions">
-          <div class="clock-wrap">
-            <span id="clock" class="clock"> --:-- </span>
-
-            <span id="date" class="date"> -- </span>
-          </div>
-
-          <button class="language-button" id="languageButton" type="button">
-            English
-          </button>
-        </div>
-      </header>
-
-      <main id="app" class="main-content"></main>
-
-      <footer class="footer">
-        <span id="footerPrototype"> High-Fidelity prototyp </span>
-
-        <span id="footerScreen"> Publik pekskärm </span>
-      </footer>
-    </div>
-
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <main class="app-shell" id="app"></main>
 
     <script src="script.js"></script>
   </body>

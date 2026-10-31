@@ -58,7 +58,7 @@ const questionBank = {
     },
 
     {
-      question: "Vilket land har staden Barcelona?",
+      question: "Vilket land ligger Barcelona i?",
       answers: ["Portugal", "Spanien", "Frankrike", "Italien"],
       correct: 1,
     },
@@ -155,48 +155,73 @@ let score = 0;
 
 let answered = false;
 
+/* REKORDLÄGE */
+
+let recordMode = false;
+
+let recordStreak = 0;
+
+let recordQuestion = null;
+
+/*
+  Rekordet börjar på 100.
+
+  Om någon slår 100 sparas det nya rekordet
+  i webbläsaren.
+*/
+
+let globalRecord = Number(localStorage.getItem("quizRecord")) || 100;
+
+/* PERSONLIGA BÄSTA RESULTAT */
+
+let bestScores = JSON.parse(localStorage.getItem("quizBestScores")) || {};
+
 /* STARTSIDA */
 
 function renderHome() {
+  recordMode = false;
+
   app.innerHTML = `
 
     <section class="screen">
-
-      <p class="eyebrow">
-        Underhållning under väntetiden
-      </p>
 
       <h1>
         QUIZ
       </h1>
 
       <p class="lead">
-        Välj en kategori och spela ett snabbt quiz medan du väntar.
-        En omgång tar ungefär 1–2 minuter.
+        Välj en kategori och spela ett snabbt quiz.
+        En vanlig omgång tar ungefär 1–2 minuter.
       </p>
 
 
       <div class="category-grid">
 
+
         ${Object.keys(questionBank)
-          .map(
-            (category) => `
+          .map((category) => {
+            const best =
+              bestScores[category] !== undefined
+                ? `${bestScores[category]}/5`
+                : "Inget resultat ännu";
 
-          <button
-            class="big-button"
-            data-category="${category}"
-          >
+            return `
 
-            ${category}
+            <button
+              class="big-button"
+              data-category="${category}"
+            >
 
-            <span>
-              5 snabba frågor
-            </span>
+              ${category}
 
-          </button>
+              <span>
+                5 frågor · Bäst: ${best}
+              </span>
 
-        `,
-          )
+            </button>
+
+          `;
+          })
           .join("")}
 
 
@@ -213,6 +238,21 @@ function renderHome() {
 
         </button>
 
+
+        <button
+          class="big-button record"
+          id="recordMode"
+        >
+
+          Rekordläge
+
+          <span>
+            Rekord: ${globalRecord} rätt i rad
+          </span>
+
+        </button>
+
+
       </div>
 
 
@@ -220,22 +260,27 @@ function renderHome() {
         Du kan avsluta quizet när som helst.
       </p>
 
+
     </section>
 
   `;
 
-  const buttons = document.querySelectorAll("[data-category]");
-
-  buttons.forEach((button) => {
+  document.querySelectorAll("[data-category]").forEach((button) => {
     button.addEventListener("click", () => {
       startQuiz(button.dataset.category);
     });
   });
+
+  document
+    .getElementById("recordMode")
+    .addEventListener("click", startRecordMode);
 }
 
-/* STARTA QUIZ */
+/* STARTA VANLIGT QUIZ */
 
 function startQuiz(category) {
+  recordMode = false;
+
   currentCategory = category;
 
   currentIndex = 0;
@@ -249,7 +294,7 @@ function startQuiz(category) {
 
     currentQuestions = shuffle([...allQuestions]).slice(0, 5);
   } else {
-    currentQuestions = [...questionBank[category]];
+    currentQuestions = shuffle([...questionBank[category]]);
   }
 
   renderQuestion();
@@ -268,7 +313,6 @@ function renderQuestion() {
 
 
       <div class="quiz-top">
-
 
         <div>
 
@@ -292,11 +336,8 @@ function renderQuestion() {
           class="exit-button"
           id="exitQuiz"
         >
-
           Avsluta quiz
-
         </button>
-
 
       </div>
 
@@ -313,9 +354,7 @@ function renderQuestion() {
 
 
       <h2 class="question">
-
         ${item.question}
-
       </h2>
 
 
@@ -350,9 +389,7 @@ function renderQuestion() {
 
   document.getElementById("exitQuiz").addEventListener("click", renderHome);
 
-  const answerButtons = document.querySelectorAll("[data-answer]");
-
-  answerButtons.forEach((button) => {
+  document.querySelectorAll("[data-answer]").forEach((button) => {
     button.addEventListener("click", () => {
       chooseAnswer(Number(button.dataset.answer));
     });
@@ -400,10 +437,7 @@ function chooseAnswer(selectedIndex) {
     >
 
       ${
-        isCorrect
-          ? "Rätt!"
-          : `Fel. Rätt svar är:
-          ${item.answers[item.correct]}`
+        isCorrect ? "Rätt!" : `Fel! Rätt svar är ${item.answers[item.correct]}.`
       }
 
     </div>
@@ -444,28 +478,68 @@ function chooseAnswer(selectedIndex) {
 /* RESULTAT */
 
 function renderResult() {
+  const total = currentQuestions.length;
+
+  const percentage = Math.round((score / total) * 100);
+
+  /*
+    Spara personligt bästa resultat
+    om det är en vanlig kategori.
+  */
+
+  if (currentCategory !== "Slumpmix") {
+    const oldBest = bestScores[currentCategory] || 0;
+
+    if (score > oldBest) {
+      bestScores[currentCategory] = score;
+
+      localStorage.setItem("quizBestScores", JSON.stringify(bestScores));
+    }
+  }
+
+  let bestText = "";
+
+  if (currentCategory !== "Slumpmix") {
+    bestText = `
+
+      <div class="best-score">
+
+        Bästa resultat i
+        ${currentCategory}:
+        <strong>
+          ${bestScores[currentCategory]}/5
+        </strong>
+
+      </div>
+
+    `;
+  }
+
   app.innerHTML = `
 
     <section class="screen">
 
 
       <p class="eyebrow">
-
         Quiz klart
-
       </p>
 
 
       <h2>
-
-        Bra jobbat!
-
+        Resultat
       </h2>
 
 
       <div class="result-score">
 
-        ${score}/${currentQuestions.length}
+        ${score}/${total}
+
+      </div>
+
+
+      <div class="result-percent">
+
+        ${percentage} %
 
       </div>
 
@@ -475,10 +549,13 @@ function renderResult() {
         Du fick
         ${score}
         av
-        ${currentQuestions.length}
-        rätt.
+        ${total}
+        frågor rätt.
 
       </p>
+
+
+      ${bestText}
 
 
       <div class="actions">
@@ -489,17 +566,27 @@ function renderResult() {
           id="playAgain"
         >
 
-          Spela samma kategori igen
+          Spela igen
 
         </button>
 
 
         <button
           class="secondary-button"
-          id="changeQuiz"
+          id="randomQuiz"
         >
 
-          Välj nytt quiz
+          Nytt slumpquiz
+
+        </button>
+
+
+        <button
+          class="secondary-button"
+          id="homeButton"
+        >
+
+          Välj kategori
 
         </button>
 
@@ -515,10 +602,280 @@ function renderResult() {
     startQuiz(currentCategory);
   });
 
-  document.getElementById("changeQuiz").addEventListener("click", renderHome);
+  document.getElementById("randomQuiz").addEventListener("click", () => {
+    startQuiz("Slumpmix");
+  });
+
+  document.getElementById("homeButton").addEventListener("click", renderHome);
 }
 
-/* SLUMPA */
+/* STARTA REKORDLÄGE */
+
+function startRecordMode() {
+  recordMode = true;
+
+  recordStreak = 0;
+
+  answered = false;
+
+  renderRecordQuestion();
+}
+
+/* HÄMTA SLUMPAD FRÅGA */
+
+function getRandomQuestion() {
+  const allQuestions = Object.values(questionBank).flat();
+
+  const randomIndex = Math.floor(Math.random() * allQuestions.length);
+
+  return allQuestions[randomIndex];
+}
+
+/* VISA REKORDFRÅGA */
+
+function renderRecordQuestion() {
+  recordQuestion = getRandomQuestion();
+
+  answered = false;
+
+  app.innerHTML = `
+
+    <section class="screen">
+
+
+      <div class="quiz-top">
+
+        <div>
+
+          <p class="eyebrow">
+            Rekordläge
+          </p>
+
+          <div class="progress-copy">
+
+            Rätt i rad:
+            ${recordStreak}
+
+          </div>
+
+        </div>
+
+
+        <button
+          class="exit-button"
+          id="exitRecord"
+        >
+
+          Avsluta
+
+        </button>
+
+      </div>
+
+
+      <div class="record-box">
+
+        Nuvarande rekord
+
+        <div class="record-number">
+
+          ${globalRecord}
+
+        </div>
+
+        rätt i rad
+
+      </div>
+
+
+      <h2 class="question">
+
+        ${recordQuestion.question}
+
+      </h2>
+
+
+      <div class="answer-grid">
+
+        ${recordQuestion.answers
+          .map(
+            (answer, index) => `
+
+            <button
+              class="answer-button"
+              data-record-answer="${index}"
+            >
+
+              ${answer}
+
+            </button>
+
+          `,
+          )
+          .join("")}
+
+      </div>
+
+
+      <div id="feedback"></div>
+
+
+    </section>
+
+  `;
+
+  document.getElementById("exitRecord").addEventListener("click", renderHome);
+
+  document.querySelectorAll("[data-record-answer]").forEach((button) => {
+    button.addEventListener("click", () => {
+      chooseRecordAnswer(Number(button.dataset.recordAnswer));
+    });
+  });
+}
+
+/* SVAR I REKORDLÄGE */
+
+function chooseRecordAnswer(selectedIndex) {
+  if (answered) {
+    return;
+  }
+
+  answered = true;
+
+  const isCorrect = selectedIndex === recordQuestion.correct;
+
+  const buttons = [...document.querySelectorAll("[data-record-answer]")];
+
+  buttons.forEach((button, index) => {
+    button.disabled = true;
+
+    if (index === recordQuestion.correct) {
+      button.classList.add("correct");
+    }
+
+    if (index === selectedIndex && !isCorrect) {
+      button.classList.add("wrong");
+    }
+  });
+
+  const feedback = document.getElementById("feedback");
+
+  /* RÄTT SVAR */
+
+  if (isCorrect) {
+    recordStreak++;
+
+    let recordMessage = "";
+
+    if (recordStreak > globalRecord) {
+      globalRecord = recordStreak;
+
+      localStorage.setItem("quizRecord", globalRecord);
+
+      recordMessage = `
+        Du har slagit rekordet!
+      `;
+    }
+
+    feedback.innerHTML = `
+
+      <div class="feedback-box correct">
+
+        Rätt!
+
+        ${recordMessage}
+
+      </div>
+
+
+      <div class="actions">
+
+        <button
+          class="next-button"
+          id="nextRecord"
+        >
+
+          Nästa fråga
+
+        </button>
+
+      </div>
+
+    `;
+
+    document
+      .getElementById("nextRecord")
+      .addEventListener("click", renderRecordQuestion);
+  } else {
+    /* FEL SVAR */
+    feedback.innerHTML = `
+
+      <div class="feedback-box wrong">
+
+        Fel!
+
+        Rätt svar var
+        ${recordQuestion.answers[recordQuestion.correct]}.
+
+      </div>
+
+
+      <div class="record-box">
+
+        Du fick
+
+        <div class="record-number">
+
+          ${recordStreak}
+
+        </div>
+
+        rätt i rad.
+
+        <br><br>
+
+        Rekord:
+        <strong>
+          ${globalRecord}
+        </strong>
+
+      </div>
+
+
+      <div class="actions">
+
+        <button
+          class="next-button"
+          id="tryAgain"
+        >
+
+          Försök igen
+
+        </button>
+
+
+        <button
+          class="secondary-button"
+          id="backHome"
+        >
+
+          Till startsidan
+
+        </button>
+
+      </div>
+
+    `;
+
+    document
+      .getElementById("tryAgain")
+      .addEventListener("click", startRecordMode);
+
+    document.getElementById("backHome").addEventListener("click", renderHome);
+  }
+}
+
+/* BLANDA ARRAY */
 
 function shuffle(array) {
   for (let i = array.length - 1; i > 0; i--) {
@@ -530,6 +887,6 @@ function shuffle(array) {
   return array;
 }
 
-/* STARTA SIDAN */
+/* START */
 
 renderHome();
